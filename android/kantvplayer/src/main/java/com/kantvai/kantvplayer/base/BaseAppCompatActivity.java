@@ -27,30 +27,28 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.app.SkinAppCompatDelegateImpl;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.kantvai.kantvplayer.BuildConfig;
 import com.gyf.immersionbar.ImmersionBar;
+import com.kantvai.kantvplayer.BuildConfig;
 import com.kantvai.kantvplayer.R;
 import com.kantvai.kantvplayer.utils.CommonUtils;
 import com.kantvai.kantvplayer.utils.Settings;
 import com.kantvai.kantvplayer.utils.interf.IBaseView;
 
-
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import kantvai.media.player.KANTVAssetLoader;
-import skin.support.SkinCompatManager;
-import skin.support.observe.SkinObservable;
-import skin.support.observe.SkinObserver;
-
 import kantvai.media.player.KANTVLog;
 import kantvai.media.player.KANTVUtils;
-
+import kantvai.tool.skinsupport.SkinCompatManager;
+import kantvai.tool.skinsupport.app.SkinAppCompatDelegateImpl;
+import kantvai.tool.skinsupport.observe.SkinObservable;
+import kantvai.tool.skinsupport.observe.SkinObserver;
 
 /**
  * onCreate()

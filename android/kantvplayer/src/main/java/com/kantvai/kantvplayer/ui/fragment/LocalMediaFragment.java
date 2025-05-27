@@ -18,10 +18,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.blankj.utilcode.util.ToastUtils;
+import kantvai.tool.blankj.utilcode.util.ToastUtils;
 import com.kantvai.kantvplayer.mvp.impl.LocalMediaFragmentPresenterImpl;
 import com.kantvai.kantvplayer.utils.Settings;
-import com.tbruyelle.rxpermissions2.RxPermissions;
 import com.kantvai.kantvplayer.R;
 import com.kantvai.kantvplayer.base.BaseMvpFragment;
 import com.kantvai.kantvplayer.base.BaseRvAdapter;
@@ -41,10 +40,11 @@ import java.util.Collections;
 import java.util.List;
 
 import butterknife.BindView;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.disposables.Disposable;
 import kantvai.media.player.KANTVUtils;
-import io.reactivex.Observer;
-import io.reactivex.disposables.Disposable;
 import kantvai.media.player.KANTVLog;
+import kantvai.tool.rxpermissions.RxPermissions;
 
 
 public class LocalMediaFragment extends BaseMvpFragment<LocalMediaFragmentPresenter> implements LocalMediaFragmentView {

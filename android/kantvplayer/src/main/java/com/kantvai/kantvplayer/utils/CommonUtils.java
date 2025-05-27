@@ -22,7 +22,7 @@ import androidx.annotation.DrawableRes;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 
-import com.blankj.utilcode.util.UriUtils;
+import kantvai.tool.blankj.utilcode.util.UriUtils;
 import com.kantvai.kantvplayer.app.IApplication;
 
 import java.io.Closeable;
@@ -33,7 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
-import skin.support.content.res.SkinCompatResources;
+import kantvai.tool.skinsupport.content.res.SkinCompatResources;
 
 //TODO:merge code to KANTVUtils.java
 public class CommonUtils {
@@ -143,7 +143,7 @@ public class CommonUtils {
 
 
     public static boolean isMediaFile(String fileName) {
-        switch (com.blankj.utilcode.util.FileUtils.getFileExtension(fileName).toLowerCase()) {
+        switch (kantvai.tool.blankj.utilcode.util.FileUtils.getFileExtension(fileName).toLowerCase()) {
             case "3gp":
             case "avi":
             case "flv":

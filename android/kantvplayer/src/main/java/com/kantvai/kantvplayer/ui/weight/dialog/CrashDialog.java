@@ -12,7 +12,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-import com.blankj.utilcode.util.ToastUtils;
+import kantvai.tool.blankj.utilcode.util.ToastUtils;
 import com.kantvai.kantvplayer.R;
 
 import butterknife.BindView;
@@ -54,7 +54,7 @@ public class CrashDialog extends Dialog {
                 ClipData mClipDataMagnet = ClipData.newPlainText("Label", content);
                 if (clipboardManagerMagnet != null) {
                     clipboardManagerMagnet.setPrimaryClip(mClipDataMagnet);
-                    ToastUtils.showShort("已复制错误日志");
+                    ToastUtils.showShort("Error log copied");
                 }
                 break;
         }

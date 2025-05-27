@@ -10,19 +10,19 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.app.SkinAppCompatDelegateImpl;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import com.blankj.utilcode.util.AppUtils;
-import com.blankj.utilcode.util.ServiceUtils;
-import com.blankj.utilcode.util.ToastUtils;
+import kantvai.tool.blankj.utilcode.util.AppUtils;
+import kantvai.tool.blankj.utilcode.util.ServiceUtils;
+import kantvai.tool.blankj.utilcode.util.ToastUtils;
 import com.gyf.immersionbar.ImmersionBar;
 import com.kantvai.kantvplayer.R;
 import com.kantvai.kantvplayer.utils.CommonUtils;
 
 import kantvai.media.player.KANTVLog;
+import kantvai.tool.skinsupport.app.SkinAppCompatDelegateImpl;
 
 
 public class ShellActivity extends AppCompatActivity {
