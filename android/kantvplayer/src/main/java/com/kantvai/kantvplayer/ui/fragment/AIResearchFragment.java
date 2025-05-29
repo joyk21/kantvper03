@@ -90,6 +90,7 @@
      Button btnBenchmark;
      Button btnStop;
      Button btnSelectImage;
+     Button btnSelectAudio;
 
      Markwon markwon;
      String strInferenceResult;
@@ -100,6 +101,7 @@
      ArrayAdapter<String> adapterGGMLBackendType = null;
 
      private static final int SELECT_IMAGE = 1;
+     private static final int SELECT_AUDIO = 2;
 
      private int nThreadCounts = 1;
      private int nBenchmarkIndex = KANTVAIUtils.bench_type.GGML_BENCHMARK_ASR.ordinal();
@@ -119,7 +121,7 @@
 
      private String selectModeFileName = "";
      private Bitmap bitmapSelectedImage = null;
-     private String pathSelectedImage = "";
+     private String pathSelectedMedia = "";
 
      private long beginTime = 0;
      private long endTime = 0;
@@ -133,8 +135,7 @@
      private boolean isASRModel = false;
 
      //05-25-2024, add for MiniCPM-V(A GPT-4V Level Multimodal LLM, https://github.com/OpenBMB/MiniCPM-V) or other GPT-4o style Multimodal LLM)
-     private boolean isLLMVModel = false; //A GPT-4V style multimodal LLM
-     private boolean isLLMOModel = false; //A GPT-4o style multimodal LLM
+     private boolean isMTMDModel = false; // multimodal LLM
 
      private AtomicBoolean isBenchmarking = new AtomicBoolean(false);
      private ProgressDialog mProgressDialog;
@@ -199,6 +200,7 @@
          btnBenchmark = mActivity.findViewById(R.id.btnBenchmark);
          btnStop = mActivity.findViewById(R.id.btnStop);
          btnSelectImage = mActivity.findViewById(R.id.btnSelectImage);
+         btnSelectAudio = mActivity.findViewById(R.id.btnSelectAudio);
          txtUserInput = mActivity.findViewById(R.id.txtPrompt);
          llInfoLayout = mActivity.findViewById(R.id.llInfoLayout);
          txtInferenceResult.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
@@ -334,6 +336,13 @@
              startActivityForResult(intent, SELECT_IMAGE);
          });
 
+         btnSelectAudio.setOnClickListener(v -> {
+             resetUIAndStatus(null, true, false);
+             Intent intent = new Intent(Intent.ACTION_PICK);
+             intent.setType("audio/*");
+             startActivityForResult(intent, SELECT_AUDIO);
+         });
+
          btnStop.setOnClickListener(v -> {
              KANTVLog.g(TAG, "here");
              if (ggmljava.inference_is_running()) {
@@ -393,10 +402,14 @@
                  }
 
                  //FIXME: refine logic here
-                 if ((pathSelectedImage != null) && (!pathSelectedImage.isEmpty())) {
-                     if (KANTVAIUtils.isLLMVModel(selectModeFileName)) {
-                         isLLMVModel = true;
-                         txtUserInput.setText("What is in the image?");
+                 if ((pathSelectedMedia != null) && (!pathSelectedMedia.isEmpty())) {
+                     if (KANTVAIUtils.isMTMDModel(selectModeFileName)) {
+                         isMTMDModel = true;
+                         if (KANTVAIUtils.isAudioFile(pathSelectedMedia)) {
+                             txtUserInput.setText("Pls help transcribe this file:" + pathSelectedMedia);
+                         } else {
+                             txtUserInput.setText("What is in the image?");
+                         }
                          File mmprModelFile = new File(KANTVUtils.getSDCardDataPath() + AIModelMgr.getMMProjmodelName(selectModelIndex));
                          if (!mmprModelFile.exists()) {
                              KANTVUtils.showMsgBox(mActivity, "LLM mmproj model file:" +
@@ -408,7 +421,7 @@
                      }
                  }
 
-                 if ((!isMNISTModel) && (!isLLMVModel) && (!isLLMOModel)) {
+                 if ((!isMNISTModel) && (!isMTMDModel)) {
                      if (ivInfo != null) {
                          ivInfo.setVisibility(View.INVISIBLE);
                          llInfoLayout.removeView(ivInfo);
@@ -416,11 +429,13 @@
                      }
                  }
 
-                 if (isLLMVModel || isLLMOModel) {
-                     if ((bitmapSelectedImage == null) || (pathSelectedImage.isEmpty())) {
-                         KANTVLog.j(TAG, "image is empty");
-                         KANTVUtils.showMsgBox(mActivity, "please select a image for LLM multimodal inference");
-                         return;
+                 if (isMTMDModel) {
+                     if (KANTVAIUtils.isImageFile(pathSelectedMedia)) {
+                         if ((bitmapSelectedImage == null) || (pathSelectedMedia.isEmpty())) {
+                             KANTVLog.j(TAG, "image is empty");
+                             KANTVUtils.showMsgBox(mActivity, "please select a image for LLM multimodal inference");
+                             return;
+                         }
                      }
                  }
 
@@ -442,6 +457,27 @@
                  File sampleFile = new File(KANTVUtils.getDataPath() + ggmlSampleFileName);
                  if (!sampleFile.exists()) {
                      KANTVLog.j(TAG, "sample file not exist:" + sampleFile.getAbsolutePath());
+                 }
+
+                 //sanity check
+                 if (isMTMDModel) {
+                     if (KANTVAIUtils.isImageFile(pathSelectedMedia)) {
+                         if (!KANTVAIUtils.isMTMD_ImageModel(selectModeFile.getAbsolutePath())) {
+                             KANTVUtils.showMsgBox(mActivity, "selected image file " + pathSelectedMedia
+                                     + ", but the selected multimodal model:" + selectModeFile.getAbsolutePath() + " doesn't hava image capability"
+                             );
+                             return;
+                         }
+                     }
+
+                     if (KANTVAIUtils.isAudioFile(pathSelectedMedia)) {
+                         if (!KANTVAIUtils.isMTMD_AudioModel(selectModeFile.getAbsolutePath())) {
+                             KANTVUtils.showMsgBox(mActivity, "selected audio file " + pathSelectedMedia
+                                     + ", but the selected multimodal model:" + selectModeFile.getAbsolutePath() + " doesn't hava audio capability"
+                             );
+                             return;
+                         }
+                     }
                  }
 
                  if (isASRModel) {
@@ -518,16 +554,32 @@
                      ggmljava.ggml_set_benchmark_status(0);
 
                      if (isLLMModel) {
-                         if (isLLMVModel) {
+                         if (isMTMDModel) {
                              //LLM multimodal inference
-                             KANTVLog.g(TAG, "LLMV model, image path:" + pathSelectedImage);
-                             strBenchmarkInfo = ggmljava.llava_inference(
-                                     KANTVUtils.getSDCardDataPath() + AIModelMgr.getModelName(selectModelIndex),
-                                     KANTVUtils.getSDCardDataPath() + AIModelMgr.getMMProjmodelName(selectModelIndex),
-                                     pathSelectedImage,
-                                     strUserInput,
-                                     2,
-                                     nThreadCounts, backendIndex, ggmljava.HWACCEL_CDSP);
+                             KANTVLog.g(TAG, "multimodal model, media path:" + pathSelectedMedia);
+                             if (KANTVAIUtils.isImageFile(pathSelectedMedia)) {
+                                 strBenchmarkInfo = ggmljava.mtmd_inference(
+                                         KANTVUtils.getSDCardDataPath() + AIModelMgr.getModelName(selectModelIndex),
+                                         KANTVUtils.getSDCardDataPath() + AIModelMgr.getMMProjmodelName(selectModelIndex),
+                                         pathSelectedMedia,
+                                         strUserInput,
+                                         1,
+                                         nThreadCounts, backendIndex, ggmljava.HWACCEL_CDSP);
+                             } else if (KANTVAIUtils.isAudioFile(pathSelectedMedia)) {
+                                 strBenchmarkInfo = ggmljava.mtmd_inference(
+                                         KANTVUtils.getSDCardDataPath() + AIModelMgr.getModelName(selectModelIndex),
+                                         KANTVUtils.getSDCardDataPath() + AIModelMgr.getMMProjmodelName(selectModelIndex),
+                                         pathSelectedMedia,
+                                         strUserInput,
+                                         2,
+                                         nThreadCounts, backendIndex, ggmljava.HWACCEL_CDSP);
+                             } else {
+                                 endTime = System.currentTimeMillis();
+                                 duration = (endTime - beginTime);
+                                 isBenchmarking.set(false);
+                                 KANTVUtils.showMsgBox(mActivity, "only support MTMD audio and image currently");
+                                 return;
+                             }
                          } else {
                              //general LLM inference
                              strBenchmarkInfo = ggmljava.llm_inference(
@@ -690,7 +742,7 @@
                      //xiaomi14: image path:/raw//storage/emulated/0/Pictures/mnist-7.png, skip /raw/
                      if (imgPath.startsWith("/raw/"))
                          imgPath = imgPath.substring(6);
-                     pathSelectedImage = imgPath;
+                     pathSelectedMedia = imgPath;
                      KANTVLog.g(TAG, "image path:" + imgPath);
                      displayImage(imgPath);
                  }
@@ -698,9 +750,32 @@
                  KANTVLog.g(TAG, "error occurred: " + exception.toString());
                  KANTVUtils.showMsgBox(mActivity, "error occurred: " + exception.toString());
              }
-         } else {
-             KANTVLog.g(TAG, "it shouldn't happen, pls check why?");
-             KANTVUtils.showMsgBox(mActivity, "it shouldn't happen, pls check why");
+         }
+
+         if ((requestCode == SELECT_AUDIO) && (null != data)) {
+             Uri selectedAudioUri = data.getData();
+             try {
+                 String[] proj = {MediaStore.Images.Media.DATA};
+                 CursorLoader loader = new CursorLoader(mContext, selectedAudioUri, proj, null, null, null);
+                 Cursor cursor = loader.loadInBackground();
+                 int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                 cursor.moveToFirst();
+                 String realImagePath = cursor.getString(column_index);
+                 cursor.close();
+                 KANTVLog.g(TAG, "realAudioPath " + realImagePath);
+                 selectedAudioUri = Uri.fromFile(new File(realImagePath));
+
+                 String audioPath = selectedAudioUri.getPath();
+                 KANTVLog.g(TAG, "audio path:" + audioPath);
+                 if (audioPath.startsWith("/raw/"))
+                     audioPath = audioPath.substring(6);
+                 pathSelectedMedia = audioPath;
+                 KANTVLog.g(TAG, "audio path:" + audioPath);
+                 displayAudio(audioPath);
+             } catch (Exception exception) {
+                 KANTVLog.g(TAG, "error occurred: " + exception.toString());
+                 KANTVUtils.showMsgBox(mActivity, "error occurred: " + exception.toString());
+             }
          }
      }
 
@@ -885,6 +960,9 @@
      }
 
      private void displayImage(String imgPath) {
+         if (KANTVAIUtils.isAudioFile(imgPath)) {
+             return;
+         }
          if (ivInfo != null) {
              ivInfo.setVisibility(View.INVISIBLE);
              llInfoLayout.removeView(ivInfo);
@@ -917,6 +995,10 @@
          ivInfo.setAdjustViewBounds(true);
      }
 
+     private void displayAudio(String audioPath) {
+         //TODO:
+         txtInferenceResult.append("audio: " + audioPath);
+     }
 
      private Bitmap decodeUri(Uri uriSelectedImage, boolean scaled) throws FileNotFoundException {
          // Decode image size
@@ -992,21 +1074,21 @@
                  ivInfo = null;
              }
              bitmapSelectedImage = null;
-             pathSelectedImage = null;
+             pathSelectedMedia = null;
          } else {
              if (isMNISTModel) {
                  String imgPath = KANTVUtils.getDataPath() + ggmlMNISTImageFile;
                  displayImage(imgPath);
                  bitmapSelectedImage = null;
-                 pathSelectedImage = null;
+                 pathSelectedMedia = null;
              }
 
-             if (isLLMVModel) {
-                 if (pathSelectedImage != null && !pathSelectedImage.isEmpty()) {
-                     displayImage(pathSelectedImage);
+             if (isMTMDModel) {
+                 if (pathSelectedMedia != null && !pathSelectedMedia.isEmpty()) {
+                     displayImage(pathSelectedMedia);
                  }
                  bitmapSelectedImage = null;
-                 pathSelectedImage = null;
+                 pathSelectedMedia = null;
              }
 
              if (isSDModel) {
@@ -1023,8 +1105,7 @@
          isMNISTModel = false;
          isTTSModel = false;
          isASRModel = false;
-         isLLMVModel = false;
-         isLLMOModel = false;
+         isMTMDModel = false;
 
          selectModeFileName = "";
          strInferenceResult = "";
