@@ -238,7 +238,6 @@ set(SOURCE_FILES
         ${KANTV_GGMLJNI_SRC_DIR}/ggml-jni.c
         ${KANTV_GGMLJNI_SRC_DIR}/tinywav.c
         ${KANTV_GGMLJNI_SRC_DIR}/ggml-jni-impl.cpp
-        ${KANTV_GGMLJNI_SRC_DIR}/ggml-jni-impl-external.cpp
         ${KANTV_GGMLJNI_SRC_DIR}/llm-inference.cpp
         ${KANTV_GGMLJNI_SRC_DIR}/sd-inference.cpp
         ${KANTV_GGMLJNI_SRC_DIR}/ndkcamera.cpp
@@ -246,6 +245,7 @@ set(SOURCE_FILES
         ${KANTV_GGMLJNI_SRC_DIR}/bmp.c
         ${KANTV_GGMLJNI_SRC_DIR}/realtime-video-recognition.cpp
         ${KANTV_GGMLJNI_SRC_DIR}/mtmd-inference.cpp
+        ${KANTV_GGMLJNI_SRC_DIR}/ggml-jni-context.cpp
 )
 
 add_definitions(-DTARGET_ANDROID)

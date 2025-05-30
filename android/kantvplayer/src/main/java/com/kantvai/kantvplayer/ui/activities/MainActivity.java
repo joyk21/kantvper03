@@ -103,10 +103,12 @@ package com.kantvai.kantvplayer.ui.activities;
         if (usingLocalMediaAsHome) {
             setTitle(getBaseContext().getString(R.string.localmedia));
             navigationView.setSelectedItemId(R.id.navigation_play);
+            KANTVUtils.setMenuItemID(R.id.navigation_play);
             switchFragment(LocalMediaFragment.class);
         } else {
             setTitle(getBaseContext().getString(R.string.onlinetv));
             navigationView.setSelectedItemId(R.id.navigation_home);
+            KANTVUtils.setMenuItemID(R.id.navigation_home);
             switchFragment(TVGridFragment.class);
         }
 
@@ -158,8 +160,9 @@ package com.kantvai.kantvplayer.ui.activities;
                 fragmentTransaction.remove(homeFragment);
             if (LocalMediaFragment != null)
                 fragmentTransaction.remove(LocalMediaFragment);
-            if (llmFragment != null)
+            if (llmFragment != null) {
                 fragmentTransaction.remove(llmFragment);
+            }
             if (personalFragment != null)
                 fragmentTransaction.remove(personalFragment);
             if (airesearchFragment != null)
@@ -176,19 +179,20 @@ package com.kantvai.kantvplayer.ui.activities;
     public void initListener() {
         navigationView.setOnNavigationItemSelectedListener(item -> {
             KANTVLog.g(TAG, "System.currentTimeMillis() - switchTime " + (System.currentTimeMillis() - switchTime));
-            //FIXME:add following line to fix a random bug, this is dirty method
-            ggmljava.inference_stop_inference();
-
             if (previousMenuItem != null) {
-                //FIXME:workaround to fix potential issue when stablediffusion inference is running
+                //FIXME:workaround to fix potential issue when the time-consuming stablediffusion & MTMD inference is running
                 if (previousMenuItem.getItemId() == R.id.navigation_asr) {
                     if (airesearchFragment.isStableDiffusionInference()) {
                         ToastUtils.showShort("cann't switch when benchmark type is stablediffusion inference");
                         return false;
                     }
+                    if (airesearchFragment.isMTMDInference()) {
+                        ToastUtils.showShort("cann't switch when benchmark type is MTMD(multimodal) inference");
+                        return false;
+                    }
                 }
 
-                //FIXME:workaround to fix a potential deadlock in a special scenario of AI inference(realtime video inference)
+                //workaround to fix a potential stability issue in a special scenario of AI inference(realtime video inference)
                 if ((item.getItemId() == R.id.navigation_aiagent) && (previousMenuItem.getItemId() == R.id.navigation_asr)) {
                     if (System.currentTimeMillis() - switchTime < 1000) {
                         ToastUtils.showShort("switch duration is too short");
@@ -204,10 +208,16 @@ package com.kantvai.kantvplayer.ui.activities;
                     }
                 }
             }
+
+            //add following two lines to avoid potential stability issue
+            ggmljava.llm_reset_running_state();
+            ggmljava.realtimemtmd_reset_running_state();
+
             switchTime = System.currentTimeMillis();
             previousMenuItem = item;
 
             KANTVLog.d(TAG, "item id: " + item.getItemId());
+            KANTVUtils.setMenuItemID(item.getItemId());
             switch (item.getItemId()) {
                 case R.id.navigation_home:
                     setTitle(mActivity.getBaseContext().getString(R.string.onlinetv));
@@ -406,7 +416,6 @@ package com.kantvai.kantvplayer.ui.activities;
                 //agentFragment.release();
             }
         }
-
 
         if (clazz == TVGridFragment.class) {
             if (homeFragment == null) {
